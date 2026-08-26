@@ -264,19 +264,20 @@ void updateScreen() {
   
   // The 5.79" panel is two halves with a physical seam at x=400, and the
   // header lands with DOW|NTOWN straddling it, so the gap eats into the N.
-  // Print it as two runs: the left one is right-aligned to end exactly at
-  // the seam, and the right one starts a space-width further over, which
-  // puts the slack inside the seam where it reads as even spacing.
+  // Print it as two runs with the gap straddling the seam: the left run
+  // ends half a gap before it and the right run starts half a gap after, so
+  // the seam lands in whitespace. Ending the left run *at* the seam is not
+  // enough - the seam then sits hard against the W and eats its right tail.
   const int seamX   = 400;
   const int seamGap = 10;  // one space at this size; widen if still tight
 
   int16_t x1, y1;
   uint16_t w, h;
   canvas.getTextBounds("NEXT BUS TO DOW", 0, 40, &x1, &y1, &w, &h);
-  canvas.setCursor(seamX - w, 40);
+  canvas.setCursor(seamX - seamGap / 2 - w, 40);
   canvas.print("NEXT BUS TO DOW");
 
-  canvas.setCursor(seamX + seamGap, 40);
+  canvas.setCursor(seamX + seamGap / 2, 40);
   canvas.print("NTOWN");
   
   // --- Weather (Top Right) ---
