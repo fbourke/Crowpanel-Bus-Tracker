@@ -1,0 +1,18 @@
+# UploadSpeed pinned to 115200: macOS's CH34x USB-UART bridge drops the
+# connection when esptool switches to 921600 mid-upload. Works at 921600 on
+# Windows; do not "fix" this back to match the Arduino IDE screenshot.
+#
+# DebugLevel=warn, not none: the ESP32 core log_w()s the exact Wi-Fi disconnect
+# reason, and "none" discards it. Needed while board #2's join failure is open.
+#
+# PartitionScheme must keep two app slots (default_8MB = 3MB each) or OTA
+# breaks. Never "Huge APP".
+#
+# CDCOnBoot=default (Disabled), even though the IDE screenshot shows "Enabled":
+# this board reaches the Mac through a CH340 bridge on UART0 (hence
+# /dev/cu.usbserial-*, and no /dev/cu.usbmodem* ever appears). CDCOnBoot=cdc
+# routes Serial to the native USB CDC peripheral instead, so the serial monitor
+# gets total silence. Keep this "default" or Wi-Fi diagnostics are invisible.
+default_fqbn: esp32:esp32:esp32s3:UploadSpeed=115200,USBMode=hwcdc,CDCOnBoot=default,MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashMode=dio,FlashSize=8M,PartitionScheme=default_8MB,DebugLevel=warn,PSRAM=opi,LoopCore=1,EventsCore=1,EraseFlash=none,JTAGAdapter=default,ZigbeeMode=default
+default_port: /dev/cu.usbserial-110
+default_protocol: serial
