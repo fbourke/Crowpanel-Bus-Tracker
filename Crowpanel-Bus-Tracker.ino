@@ -395,10 +395,17 @@ void wifiFailureScreen(String why) {
 bool connectWifi(bool showProgress) {
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);  // modem sleep adds seconds of latency to OTA discovery
-  WiFi.setAutoReconnect(true);
 
   for (int i = 0; i < numNetworks; i++) {
     if (showProgress) debugToScreen("Connecting to WiFi:", String(ssids[i]));
+
+    // esp_wifi_set_config() is refused while the station is still
+    // connecting (ESP_ERR_WIFI_STATE), which silently left every attempt
+    // after the first running on network #1's config - so the fallback
+    // SSIDs were never actually tried. Drop the old association first.
+    WiFi.setAutoReconnect(false);
+    WiFi.disconnect(false, true);  // erase the stored config too
+    delay(300);
 
     WiFi.begin(ssids[i], passwords[i]);
 
@@ -408,7 +415,10 @@ bool connectWifi(bool showProgress) {
       attempts++;
     }
 
-    if (WiFi.status() == WL_CONNECTED) return true;
+    if (WiFi.status() == WL_CONNECTED) {
+      WiFi.setAutoReconnect(true);  // safe now: we hold an association
+      return true;
+    }
   }
   return false;
 }
