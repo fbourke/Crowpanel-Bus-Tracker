@@ -46,8 +46,8 @@ const uint32_t refreshIntervalMs = 60000;
 const uint32_t wifiGraceMs       = 180000;  // how long a dropout may last before rebooting
 
 // URLs (You can inject your secret API key right into the string if you ever get a real one!)
-const char* stop400Url = "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_400.json?key=" OBA_API_KEY;
-const char* stop590Url = "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_590.json?key=" OBA_API_KEY;
+const char* stop12780Url = "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_12780.json?key=" OBA_API_KEY;
+const char* stop27350Url = "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_27350.json?key=" OBA_API_KEY;
 
 // Other Stop info:
 // 95_4 - WSDot Bremerton/Seattle Ferry
@@ -66,8 +66,8 @@ struct BusData {
 // Global Variables
 String lastUpdated = "Updating...";
 String currentWeather = "Loading..."; 
-BusData data400[2]; 
-BusData data590[2];
+BusData dataRoute4[2]; 
+BusData dataRoute27[2];
 String bootIp = "";
 uint32_t lastRefresh = 0;
 uint32_t wifiDownSince = 0;
@@ -262,23 +262,30 @@ void updateScreen() {
   
   canvas.setFont(&FreeSansBold18pt7b);
   
-  String leftHeader = "NEXT BUS";
+  // The 5.79" panel is two halves with a physical seam at x=400, and the
+  // header lands with DOW|NTOWN straddling it, so the gap eats into the N.
+  // Print it as two runs: the left one is right-aligned to end exactly at
+  // the seam, and the right one starts a space-width further over, which
+  // puts the slack inside the seam where it reads as even spacing.
+  const int seamX   = 400;
+  const int seamGap = 10;  // one space at this size; widen if still tight
+
   int16_t x1, y1;
   uint16_t w, h;
-  canvas.getTextBounds(leftHeader, 0, 40, &x1, &y1, &w, &h);
-  canvas.setCursor(380 - w, 40); 
-  canvas.print(leftHeader);
-  
-  canvas.setCursor(420, 40); 
-  canvas.print("HOME");
+  canvas.getTextBounds("NEXT BUS TO DOW", 0, 40, &x1, &y1, &w, &h);
+  canvas.setCursor(seamX - w, 40);
+  canvas.print("NEXT BUS TO DOW");
+
+  canvas.setCursor(seamX + seamGap, 40);
+  canvas.print("NTOWN");
   
   // --- Weather (Top Right) ---
   canvas.setFont(&FreeSans9pt7b);
   canvas.setCursor(600, 30); 
   canvas.print(currentWeather);
 
-  drawStopColumn(10, 100, "Route 4 (Stop 400):", data400);
-  drawStopColumn(420, 100, "Route 27 (Stop 590):", data590);
+  drawStopColumn(10, 100, "Route 4 (Stop 12780):", dataRoute4);
+  drawStopColumn(420, 100, "Route 27 (Stop 27350):", dataRoute27);
 
   canvas.setFont(&FreeSans9pt7b);
   canvas.setCursor(600, 262); 
@@ -289,7 +296,7 @@ void updateScreen() {
   // not the baseline, unlike the custom fonts above.
   canvas.setFont(NULL);
   canvas.setCursor(10, 255);
-  canvas.print(OTA_FIRMWARE_VERSION);
+  canvas.print("Build: " + String(OTA_FIRMWARE_VERSION));
 
   EPD_Display(canvas.getBuffer());
   EPD_FastUpdate();
@@ -312,7 +319,7 @@ void debugToScreen(String line1, String line2) {
   // never runs, so the build stamp has to be here too.
   canvas.setFont(NULL);
   canvas.setCursor(10, 255);
-  canvas.print(OTA_FIRMWARE_VERSION);
+  canvas.print("Build: " + String(OTA_FIRMWARE_VERSION));
 
   EPD_Display(canvas.getBuffer());
   EPD_FastUpdate();
@@ -384,7 +391,7 @@ void wifiFailureScreen(String why) {
   WiFi.scanDelete();
 
   canvas.setCursor(10, 255);
-  canvas.print(OTA_FIRMWARE_VERSION);
+  canvas.print("Build: " + String(OTA_FIRMWARE_VERSION));
 
   EPD_Display(canvas.getBuffer());
   EPD_FastUpdate();
@@ -489,12 +496,12 @@ void loop() {
   getWeather();
   otaHandle();
 
-  Serial.println("Fetching Route 4 at Stop 400...");
-  getNextTwoBuses(stop400Url, "4", data400); 
+  Serial.println("Fetching Route 4 at Stop 12780...");
+  getNextTwoBuses(stop12780Url, "4", dataRoute4); 
   otaHandle();
 
-  Serial.println("Fetching Route 27 at Stop 590...");
-  getNextTwoBuses(stop590Url, "27", data590);
+  Serial.println("Fetching Route 27 at Stop 27350...");
+  getNextTwoBuses(stop27350Url, "27", dataRoute27);
   otaHandle();
 
   Serial.println("Updating Display...");
